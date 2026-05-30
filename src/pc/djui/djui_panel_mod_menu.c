@@ -113,8 +113,7 @@ void djui_panel_mod_menu_mod_create(struct DjuiBase* caller) {
     }
     if (mod == NULL) { return; }
 
-    char *modNameUppercase = to_uppercase(mod->name);
-    struct DjuiThreePanel* panel = djui_panel_menu_create(modNameUppercase, false);
+    struct DjuiThreePanel* panel = djui_panel_menu_create(to_uppercase(mod->name), false);
     struct DjuiBase* body = djui_three_panel_get_body(panel);
     {
         struct DjuiPaginated* paginated = djui_paginated_create(body, 8);
@@ -131,7 +130,6 @@ void djui_panel_mod_menu_mod_create(struct DjuiBase* caller) {
     }
 
     djui_panel_add(caller, panel, NULL);
-    free(modNameUppercase);
 }
 
 void djui_panel_mod_menu_create(struct DjuiBase* caller) {

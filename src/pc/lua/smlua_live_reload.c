@@ -79,7 +79,7 @@ static int upval_references_deduplicate(lua_State *L, char* name, int reference,
     return reference;
 }
 
-UNUSED static void upval_references_mark_active(int reference) {
+static void upval_references_mark_active(int reference) {
     for (UpvalReference *ref = sUpvalReferences; ref; ref = ref->next) {
         if (ref->reference == reference) {
             ref->active = true;
@@ -299,7 +299,7 @@ static void upvalues_replace_hooks(lua_State *L) {
     }
 }
 
-UNUSED static void upvalues_print(UpvalRecord *upvalsHead) {
+static void upvalues_print(UpvalRecord *upvalsHead) {
     for (const UpvalRecord *cur = upvalsHead; cur; cur = cur->next) {
         LOG_INFO("upval: %s, %s, %d, %p", cur->funcKeyStr ? cur->funcKeyStr : "(non-string)", cur->name, cur->ref, cur->id);
     }

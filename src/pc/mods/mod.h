@@ -10,11 +10,6 @@
 #define MOD_CATEGORY_MAX_LENGTH 64
 #define MOD_DESCRIPTION_MAX_LENGTH 800
 
-#define MOD_NAME_SIZE (MOD_NAME_MAX_LENGTH + 1)
-#define MOD_INCOMPATIBLE_SIZE (MOD_INCOMPATIBLE_MAX_LENGTH + 1)
-#define MOD_CATEGORY_SIZE (MOD_CATEGORY_MAX_LENGTH + 1)
-#define MOD_DESCRIPTION_SIZE (MOD_DESCRIPTION_MAX_LENGTH + 1)
-
 struct Mods;
 
 struct ModFile {
@@ -30,7 +25,7 @@ struct ModFile {
 };
 
 struct Mod {
-    char name[MOD_NAME_SIZE];
+    char* name;
     char* incompatible;
     char* category;
     char* description;
@@ -48,7 +43,7 @@ struct Mod {
     bool ignoreScriptWarnings;
     bool showedScriptWarning;
     size_t size;
-    u16 customBehaviorIndex;
+    u8 customBehaviorIndex;
 };
 
 size_t mod_get_lua_size(struct Mod* mod);

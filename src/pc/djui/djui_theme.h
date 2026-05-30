@@ -15,7 +15,6 @@ enum DjuiThemeType {
 
 struct DjuiInteractableTheme {
     struct DjuiColor textColor;
-    struct DjuiColor disabledTextColor;
 
     struct DjuiColor defaultRectColor;
     struct DjuiColor cursorDownRectColor;

@@ -5,8 +5,7 @@
 #include "print.h"
 #include "pc/debuglog.h"
 
-// Alignment to a data size
-#define ALIGN_UP(val, align) (((val) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN16(val) (((val) + 0xF) & ~0xF)
 
   //////////////////
  // dynamic pool //
@@ -15,8 +14,7 @@
 struct DynamicPool *gLevelPool = NULL;
 
 struct DynamicPool* dynamic_pool_init(void) {
-    struct DynamicPool* pool = malloc(sizeof(struct DynamicPool));
-    if (!pool) { return NULL; }
+    struct DynamicPool* pool = calloc(1, sizeof(struct DynamicPool));
     pool->usedSpace = 0;
     pool->tail = NULL;
     pool->nextFree = NULL;
@@ -26,17 +24,14 @@ struct DynamicPool* dynamic_pool_init(void) {
 void* dynamic_pool_alloc(struct DynamicPool *pool, u32 size) {
     if (!pool) { return NULL; }
 
-    size_t header = ALIGN_UP(sizeof(struct DynamicPoolNode), sizeof(void*));
-    struct DynamicPoolNode* node = malloc(header + size);
-    if (!node) { return NULL; }
-    node->ptr = (u8*)node + header;
+    struct DynamicPoolNode* node = calloc(1, sizeof(struct DynamicPoolNode));
+    node->ptr = calloc(1, size);
     node->prev = pool->tail;
     node->size = size;
 
     pool->tail = node;
     pool->usedSpace += size;
 
-    memset(node->ptr, 0, size);
     return node->ptr;
 }
 
@@ -55,7 +50,8 @@ void dynamic_pool_free(struct DynamicPool *pool, void* ptr) {
                 next->prev = prev;
             }
             pool->usedSpace -= node->size;
-            free(node); // node->ptr is freed here too; it's part of the same allocation
+            free(node->ptr);
+            free(node);
             return;
         }
         next = node;
@@ -85,7 +81,8 @@ void dynamic_pool_free_pool(struct DynamicPool *pool) {
     struct DynamicPoolNode* node = pool->nextFree;
     while (node) {
         struct DynamicPoolNode* prev = node->prev;
-        free(node); // node->ptr is freed here too; it's part of the same allocation
+        free(node->ptr);
+        free(node);
         node = prev;
     }
 
@@ -110,8 +107,7 @@ struct GrowingPool* growing_pool_init(struct GrowingPool* pool, u32 nodeSize) {
         pool->usedSpace = 0;
     } else {
         // allocate a new pool
-        pool = malloc(sizeof(struct GrowingPool));
-        if (!pool) { return NULL; }
+        pool = calloc(1, sizeof(struct GrowingPool));
         pool->usedSpace = 0;
         pool->nodeSize = nodeSize;
         pool->tail = NULL;
@@ -123,22 +119,19 @@ void* growing_pool_alloc(struct GrowingPool *pool, u32 size) {
     if (!pool) { return NULL; }
 
     // maintain alignment
-    size = ALIGN_UP(size, sizeof(void*));
+    size = ALIGN16(size);
 
     // check if it's too big for a node
     if (size >= pool->nodeSize) {
         // create a node just for this
-        size_t header = ALIGN_UP(sizeof(struct GrowingPoolNode), sizeof(void*));
-        struct GrowingPoolNode* node = malloc(header + size);
-        if (!node) { return NULL; }
-        node->ptr = (u8*) node + header;
+        struct GrowingPoolNode* node = calloc(1, sizeof(struct GrowingPoolNode));
+        node->ptr = calloc(1, size);
         node->prev = pool->tail;
         node->usedSpace = size;
 
         pool->tail = node;
         pool->usedSpace += size;
 
-        memset(node->ptr, 0, size);
         return node->ptr;
     }
 
@@ -150,7 +143,7 @@ void* growing_pool_alloc(struct GrowingPool *pool, u32 size) {
         while (node && depth < 128) {
             depth++;
             s64 freeSpace = (s64)pool->nodeSize - (s64)node->usedSpace;
-            if (freeSpace >= (s64) size) { break; }
+            if (freeSpace > size) { break; }
             node = node->prev;
         }
         if (depth >= 128) {
@@ -160,11 +153,9 @@ void* growing_pool_alloc(struct GrowingPool *pool, u32 size) {
 
     // allocate new node
     if (!node) {
-        size_t header = ALIGN_UP(sizeof(struct GrowingPoolNode), sizeof(void*));
-        node = malloc(header + pool->nodeSize);
-        if (!node) { return NULL; }
+        node = calloc(1, sizeof(struct GrowingPoolNode));
         node->usedSpace = 0;
-        node->ptr = (u8*) node + header;
+        node->ptr = calloc(1, pool->nodeSize);
         node->prev = pool->tail;
         pool->tail = node;
     }
@@ -183,7 +174,8 @@ void growing_pool_free_pool(struct GrowingPool *pool) {
     struct GrowingPoolNode* node = pool->tail;
     while (node) {
         struct GrowingPoolNode* prev = node->prev;
-        free(node); // node->ptr is freed here too; it's part of the same allocation
+        free(node->ptr);
+        free(node);
         node = prev;
     }
     free(pool);
@@ -193,47 +185,10 @@ void growing_pool_free_pool(struct GrowingPool *pool) {
  // growing array //
 ///////////////////
 
-static void growing_array_free_elements(struct GrowingArray *array) {
-    if (array) {
-        if (array->buffer) {
-            for (u32 i = 0; i != array->capacity; ++i) {
-                if (array->buffer[i]) {
-                    array->free(array->buffer[i]);
-                }
-            }
-            memset(array->buffer, 0, sizeof(void *) * array->capacity);
-        }
-        array->count = 0;
-    }
-}
-
 struct GrowingArray *growing_array_init(struct GrowingArray *array, u32 capacity, GrowingArrayAllocFunc alloc, GrowingArrayFreeFunc free) {
-    growing_array_free_elements(array);
-
-    // reuse buffer if array was already allocated
-    if (array) {
-        if (!array->buffer || array->capacity != capacity) {
-            void **buffer = realloc(array->buffer, sizeof(void *) * capacity);
-
-            // if realloc fails, destroy the array and create a new one
-            if (!buffer) {
-                growing_array_free(&array);
-                return growing_array_init(NULL, capacity, alloc, free);
-            }
-
-            memset(buffer, 0, sizeof(void *) * capacity);
-            array->buffer = buffer;
-        }
-    } else {
-        array = malloc(sizeof(struct GrowingArray));
-        if (!array) { return NULL; }
-        array->buffer = calloc(capacity, sizeof(void *));
-        if (!array->buffer) {
-            free(array);
-            return NULL;
-        }
-    }
-
+    growing_array_free(&array);
+    array = calloc(1, sizeof(struct GrowingArray));
+    array->buffer = calloc(capacity, sizeof(void *));
     array->capacity = capacity;
     array->count = 0;
     array->alloc = alloc;
@@ -247,9 +202,9 @@ void *growing_array_alloc(struct GrowingArray *array, u32 size) {
         // Increase capacity if needed
         while (array->count >= array->capacity) {
             u32 newCapacity = array->capacity * 2;
-            void **newBuffer = realloc(array->buffer, newCapacity * sizeof(void *));
-            if (!newBuffer) { return NULL; }
-            memset(newBuffer + array->capacity, 0, (newCapacity - array->capacity) * sizeof(void *));
+            void **newBuffer = calloc(newCapacity, sizeof(void *));
+            memcpy(newBuffer, array->buffer, array->capacity * sizeof(void *));
+            free(array->buffer);
             array->buffer = newBuffer;
             array->capacity = newCapacity;
         }
@@ -291,37 +246,13 @@ void growing_array_move(struct GrowingArray *array, u32 from, u32 to, u32 count)
     }
 }
 
-/**
- * Swap-and-pop the entry at position `index` out of the array.
- * The slot is filled by the last live entry, and the count is decremented.
- * Returns true if the index was valid.
- */
-bool growing_array_swap_and_pop_index(struct GrowingArray *array, u32 index) {
-    if (!array || index >= array->count) { return false; }
-    array->count--;
-    void *tmp            = array->buffer[index];
-    array->buffer[index] = array->buffer[array->count];
-    array->buffer[array->count] = tmp;
-    return true;
-}
-
-/**
- * Swap-and-pop the first slot whose pointer equals `ptr`.
- * Returns true if the entry was found and removed.
- */
-bool growing_array_swap_and_pop(struct GrowingArray *array, void *ptr) {
-    if (!array) { return false; }
-    for (u32 i = 0; i < array->count; i++) {
-        if (array->buffer[i] == ptr) {
-            return growing_array_swap_and_pop_index(array, i);
-        }
-    }
-    return false;
-}
-
 void growing_array_free(struct GrowingArray **array) {
     if (*array) {
-        growing_array_free_elements(*array);
+        for (u32 i = 0; i != (*array)->capacity; ++i) {
+            if ((*array)->buffer[i]) {
+                (*array)->free((*array)->buffer[i]);
+            }
+        }
         free((*array)->buffer);
         free(*array);
         *array = NULL;

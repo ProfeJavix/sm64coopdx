@@ -5,7 +5,6 @@
 #include "djui_panel_dynos.h"
 #include "djui_panel_options.h"
 #include "djui_panel_host.h"
-#include "djui_panel_client_server_settings.h"
 #include "djui_panel_menu.h"
 #include "djui_panel_confirm.h"
 #include "djui_panel_mod_menu.h"
@@ -71,8 +70,6 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
 
         if (gNetworkType == NT_SERVER) {
             djui_button_create(body, DLANG(PAUSE, SERVER_SETTINGS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_host_create);
-        } else {
-            djui_button_create(body, DLANG(PAUSE, SERVER_SETTINGS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_client_server_settings_create);
         }
 
         struct Mod* addedMods[MAX_HOOKED_MOD_MENU_ELEMENTS] = { 0 };

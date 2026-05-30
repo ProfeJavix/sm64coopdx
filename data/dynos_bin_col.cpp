@@ -3,9 +3,7 @@
 extern "C" {
 #include "include/surface_terrains.h"
 #include "include/level_misc_macros.h"
-#include "include/special_presets.h"
 #include "include/special_preset_names.h"
-#include "src/engine/surface_load.h"
 }
 
 // Free data pointers, but keep nodes and tokens intact
@@ -36,31 +34,11 @@ struct CollisionValidationData {
     u32 vtxCount;
     u32 triAlloc;
     u32 triCount;
-    s16 surfaceType;
     u32 specialAlloc;
     u32 specialCount;
     u32 waterBoxAlloc;
     u32 waterBoxCount;
 };
-
-static u8 GetSpecialObjectType(u8 preset) {
-    for (s32 i = 0; i < ARRAY_COUNT(SpecialObjectPresets); ++i) {
-        if (SpecialObjectPresets[i].preset_id == preset) {
-            return SpecialObjectPresets[i].type;
-        }
-    }
-    return SPTYPE_UNKNOWN;
-}
-
-static const char *GetCorrectSpecialObjectCommand(u8 presetType) {
-    switch (presetType) {
-        case SPTYPE_NO_YROT_OR_PARAMS: return "SPECIAL_OBJECT";
-        case SPTYPE_YROT_NO_PARAMS: return "SPECIAL_OBJECT_WITH_YAW";
-        case SPTYPE_PARAMS_AND_YROT: return "SPECIAL_OBJECT_WITH_YAW_AND_PARAM";
-        case SPTYPE_DEF_PARAM_AND_YROT: return "SPECIAL_OBJECT_WITH_YAW";
-        default: return "";
-    }
-}
 
 static void ValidateColSectionChange(GfxData* aGfxData, struct CollisionValidationData& aColValData, u8 section) {
     if (aColValData.section == COL_SECTION_END) {
@@ -89,70 +67,51 @@ static void ValidateColInit(GfxData* aGfxData, struct CollisionValidationData& a
     ValidateColSectionChange(aGfxData, aColValData, COL_SECTION_VTX);
 }
 
-static void ValidateColVertexInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 vertexCount) {
+static void ValidateColVertexInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0) {
     if (strcmp(aColValData.lastSymbol, "COL_INIT") != 0) {
         PrintDataError("COL_VERTEX_INIT found outside of vertex section");
     }
-    if (vertexCount < 0) {
-        PrintDataError("COL_VERTEX_INIT with a negative count: %d", vertexCount);
+    if (arg0 < 0) {
+        PrintDataError("COL_VERTEX_INIT with a negative count: %d", arg0);
     }
-    aColValData.vtxAlloc = vertexCount;
+    aColValData.vtxAlloc = arg0;
     aColValData.vtxCount = 0;
 }
 
-static void ValidateColVertex(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 x, s16 y, s16 z) {
+static void ValidateColVertex(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2) {
     if (aColValData.section != COL_SECTION_VTX) {
         PrintDataError("COL_VERTEX found outside of vertex section");
     }
     aColValData.vtxCount++;
 }
 
-static void ValidateColTriInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 surfaceType, s16 triangleCount) {
-    if (triangleCount < 0) {
-        PrintDataError("COL_TRI_INIT with a negative count: %d", triangleCount);
+static void ValidateColTriInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1) {
+    if (arg1 < 0) {
+        PrintDataError("COL_TRI_INIT with a negative count: %d", arg1);
     }
     ValidateColSectionChange(aGfxData, aColValData, COL_SECTION_TRI);
-    aColValData.triAlloc = triangleCount;
+    aColValData.triAlloc = arg1;
     aColValData.triCount = 0;
-    aColValData.surfaceType = surfaceType;
 }
 
-static void ValidateColTri(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 vertex0, s16 vertex1, s16 vertex2) {
+static void ValidateColTri(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2) {
     if (aColValData.section != COL_SECTION_TRI) {
         PrintDataError("COL_TRI found outside of triangle section");
     }
-    if (surface_has_force(aColValData.surfaceType)) {
-        PrintDataError("COL_TRI cannot be used by surface types with a force parameter: %d (use COL_TRI_SPECIAL instead)", aColValData.surfaceType);
+    if (arg0 < 0 || arg0 > aColValData.vtxCount) {
+        PrintDataError("COL_TRI used vertex outside of known range for first param: %d", arg0);
     }
-    if (vertex0 < 0 || vertex0 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI used vertex outside of known range for first param: %d", vertex0);
+    if (arg1 < 0 || arg1 > aColValData.vtxCount) {
+        PrintDataError("COL_TRI used vertex outside of known range for second param: %d", arg1);
     }
-    if (vertex1 < 0 || vertex1 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI used vertex outside of known range for second param: %d", vertex1);
-    }
-    if (vertex2 < 0 || vertex2 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI used vertex outside of known range for third param: %d", vertex2);
+    if (arg2 < 0 || arg2 > aColValData.vtxCount) {
+        PrintDataError("COL_TRI used vertex outside of known range for third param: %d", arg2);
     }
     aColValData.triCount++;
 }
 
-static void ValidateColTriSpecial(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 vertex0, s16 vertex1, s16 vertex2, s16 force) {
-    if (aColValData.section != COL_SECTION_TRI) {
-        PrintDataError("COL_TRI_SPECIAL found outside of triangle section");
-    }
-    if (!surface_has_force(aColValData.surfaceType)) {
-        PrintDataError("COL_TRI_SPECIAL cannot be used by surface types with no force parameter: %d (use COL_TRI instead)", aColValData.surfaceType);
-    }
-    if (vertex0 < 0 || vertex0 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI_SPECIAL used vertex outside of known range for first param: %d", vertex0);
-    }
-    if (vertex1 < 0 || vertex1 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI_SPECIAL used vertex outside of known range for second param: %d", vertex1);
-    }
-    if (vertex2 < 0 || vertex2 > aColValData.vtxCount) {
-        PrintDataError("COL_TRI_SPECIAL used vertex outside of known range for third param: %d", vertex2);
-    }
-    aColValData.triCount++;
+static void ValidateColTriSpecial(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2, s16 arg3) {
+    ValidateColTri(aGfxData, aColValData, arg0, arg1, arg2);
 }
 
 static void ValidateColStop(GfxData* aGfxData, struct CollisionValidationData& aColValData) {
@@ -163,69 +122,48 @@ static void ValidateColEnd(GfxData* aGfxData, struct CollisionValidationData& aC
     ValidateColSectionChange(aGfxData, aColValData, COL_SECTION_END);
 }
 
-static void ValidateColSpecialInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 specialCount) {
-    if (specialCount < 0) {
-        PrintDataError("COL_SPECIAL_INIT with a negative count: %d", specialCount);
+static void ValidateColSpecialInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0) {
+    if (arg0 < 0) {
+        PrintDataError("COL_SPECIAL_INIT with a negative count: %d", arg0);
     }
     ValidateColSectionChange(aGfxData, aColValData, COL_SECTION_SPECIAL);
-    aColValData.specialAlloc = specialCount;
+    aColValData.specialAlloc = arg0;
     aColValData.specialCount = 0;
 }
 
-static void ValidateColWaterBoxInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 waterBoxCount) {
-    if (waterBoxCount < 0) {
-        PrintDataError("COL_WATER_BOX_INIT with a negative count: %d", waterBoxCount);
+static void ValidateColWaterBoxInit(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0) {
+    if (arg0 < 0) {
+        PrintDataError("COL_WATER_BOX_INIT with a negative count: %d", arg0);
     }
     ValidateColSectionChange(aGfxData, aColValData, COL_SECTION_WATER_BOX);
-    aColValData.waterBoxAlloc = waterBoxCount;
+    aColValData.waterBoxAlloc = arg0;
     aColValData.waterBoxCount = 0;
 }
 
-static void ValidateColWaterBox(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 id, s16 x1, s16 z1, s16 x2, s16 z2, s16 y) {
+static void ValidateColWaterBox(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2, s16 arg3, s16 arg4, s16 arg5) {
     if (aColValData.section != COL_SECTION_WATER_BOX) {
         PrintDataError("COL_WATER_BOX found outside of water box section");
     }
     aColValData.waterBoxCount++;
 }
 
-static void ValidateColSpecialObject(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 preset, s16 posX, s16 posY, s16 posZ) {
+static void ValidateColSpecialObject(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2, s16 arg3) {
     if (aColValData.section != COL_SECTION_SPECIAL) {
         PrintDataError("SPECIAL_OBJECT found outside of special section");
     }
-    u8 presetType = GetSpecialObjectType(preset);
-    if (presetType == SPTYPE_UNKNOWN) {
-        PrintDataError("SPECIAL_OBJECT has invalid preset: %d", preset);
-    }
-    if (presetType != SPTYPE_NO_YROT_OR_PARAMS) {
-        PrintDataError("SPECIAL_OBJECT cannot be used with preset: %d (use %s instead)", preset, GetCorrectSpecialObjectCommand(presetType));
-    }
     aColValData.specialCount++;
 }
 
-static void ValidateColSpecialObjectWithYaw(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 preset, s16 posX, s16 posY, s16 posZ, s16 yaw) {
+static void ValidateColSpecialObjectWithYaw(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2, s16 arg3, s16 arg4) {
     if (aColValData.section != COL_SECTION_SPECIAL) {
         PrintDataError("SPECIAL_OBJECT_WITH_YAW found outside of special section");
     }
-    u8 presetType = GetSpecialObjectType(preset);
-    if (presetType == SPTYPE_UNKNOWN) {
-        PrintDataError("SPECIAL_OBJECT_WITH_YAW has invalid preset: %d", preset);
-    }
-    if (presetType != SPTYPE_YROT_NO_PARAMS && presetType != SPTYPE_DEF_PARAM_AND_YROT) {
-        PrintDataError("SPECIAL_OBJECT_WITH_YAW cannot be used with preset: %d (use %s instead)", preset, GetCorrectSpecialObjectCommand(presetType));
-    }
     aColValData.specialCount++;
 }
 
-static void ValidateColSpecialObjectWithYawAndParam(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 preset, s16 posX, s16 posY, s16 posZ, s16 yaw, s16 param) {
+static void ValidateColSpecialObjectWithYawAndParam(GfxData* aGfxData, struct CollisionValidationData& aColValData, s16 arg0, s16 arg1, s16 arg2, s16 arg3, s16 arg4, s16 arg5) {
     if (aColValData.section != COL_SECTION_SPECIAL) {
         PrintDataError("SPECIAL_OBJECT_WITH_YAW_AND_PARAM found outside of special section");
-    }
-    u8 presetType = GetSpecialObjectType(preset);
-    if (presetType == SPTYPE_UNKNOWN) {
-        PrintDataError("SPECIAL_OBJECT_WITH_YAW_AND_PARAM has invalid preset: %d", preset);
-    }
-    if (presetType != SPTYPE_PARAMS_AND_YROT) {
-        PrintDataError("SPECIAL_OBJECT_WITH_YAW_AND_PARAM cannot be used with preset: %d (use %s instead)", preset, GetCorrectSpecialObjectCommand(presetType));
     }
     aColValData.specialCount++;
 }
@@ -749,7 +687,7 @@ void DynOS_Col_Generate(const SysPath &aPackFolder, Array<Pair<u64, String>> _Ac
         SysPath _ColFilename = fstring("%s/%s.col", aPackFolder.c_str(), _ColRootName.begin());
 
         // If there is an existing binary file for this collision, skip and go to the next collision
-        String _ActorFolder = DynOS_GetActorFolder(_ActorsFolders, _ColNode->mDataIdentifier);
+        String _ActorFolder = DynOS_GetActorFolder(_ActorsFolders, _ColNode->mModelIdentifier);
         SysPath _SrcFilename = fstring("%s/%s/collision.inc.c", aPackFolder.c_str(), _ActorFolder.begin());
         if (DynOS_GenFileExistsAndIsNewerThanFile(_ColFilename, _SrcFilename)) {
             continue;
@@ -760,8 +698,8 @@ void DynOS_Col_Generate(const SysPath &aPackFolder, Array<Pair<u64, String>> _Ac
         _GfxData->mLoadIndex = 0;
 
         // Parse data
-        PrintNoNewLine("%s.col: Collision identifier: %llX - Processing... ", _ColRootName.begin(), _ColNode->mDataIdentifier);
-        PrintConsole(CONSOLE_MESSAGE_INFO, "%s.col: Collision identifier: %llX - Processing... ", _ColRootName.begin(), _ColNode->mDataIdentifier);
+        PrintNoNewLine("%s.col: Collision identifier: %X - Processing... ", _ColRootName.begin(), _GfxData->mModelIdentifier);
+        PrintConsole(CONSOLE_MESSAGE_INFO, "%s.col: Collision identifier: %X - Processing... ", _ColRootName.begin(), _GfxData->mModelIdentifier);
         DynOS_Col_Parse(_GfxData, _ColNode, true);
 
         // Write if no error

@@ -1,4 +1,4 @@
-#if defined(_WIN32)
+#ifdef RAPI_D3D11
 
 #ifndef GFX_DIRECT3D11_H
 #define GFX_DIRECT3D11_H

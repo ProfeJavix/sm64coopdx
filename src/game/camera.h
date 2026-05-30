@@ -27,10 +27,10 @@ enum RomhackCameraEnable {
 
 struct RomhackCameraSettings {
     enum RomhackCameraOverride enable;
-    u8 switchable;
+    u8 centering;
     u8 dpad;
     u8 collisions;
-    u8 following;
+    u8 slowFall;
     u32 zoomedInDist;
     u32 zoomedOutDist;
     u32 zoomedInHeight;

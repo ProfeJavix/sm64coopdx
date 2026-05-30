@@ -34,9 +34,10 @@ Collision* DynOS_Col_Get(const char* collisionName) {
     // check levels
     auto& levelsArray = DynOS_Lvl_GetArray();
     for (auto& lvl : levelsArray) {
-        auto col = lvl.second->mCollisions.Find(collisionName);
-        if (col) {
-            return col->mData;
+        for (auto& col : lvl.second->mCollisions) {
+            if (col->mName == collisionName) {
+                return col->mData;
+            }
         }
     }
 

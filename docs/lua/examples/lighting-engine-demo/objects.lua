@@ -51,7 +51,6 @@ end
 --- @param flashlight Object
 function delete_flashlight(flashlight)
     le_remove_light(flashlight.oLightID)
-    flashlight.oLightID = -1
     obj_mark_for_deletion(flashlight)
     return nil
 end

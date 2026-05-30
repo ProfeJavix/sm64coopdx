@@ -9,10 +9,8 @@ struct DjuiFont {
     f32 yOffset;
     f32 defaultFontScale;
     const Gfx* textBeginDisplayList;
-    void (*render_begin)();
-    void (*render_char)(const char*);
-    void (*render_end)();
-    f32 (*char_width)(const char*);
+    void (*render_char)(char*);
+    f32 (*char_width)(char*);
 };
 
 extern const struct DjuiFont* gDjuiFonts[];

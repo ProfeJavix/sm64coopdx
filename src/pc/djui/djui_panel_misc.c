@@ -8,12 +8,25 @@
 #include "pc/utils/misc.h"
 #include "pc/configfile.h"
 #include "game/hardcoded.h"
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #endif
 
 static void djui_panel_options_open_user_folder(UNUSED struct DjuiBase* caller) {
-    open_folder(fs_get_write_path(""));
+#if defined(_WIN32) || defined(_WIN64)
+    // Windows
+    ShellExecuteA(NULL, "open", fs_get_write_path(""), NULL, NULL, SW_SHOWNORMAL);
+#elif __linux__
+    // Linux
+    char command[512];
+    snprintf(command, sizeof(command), "xdg-open \"%s\"", fs_get_write_path(""));
+    system(command);
+#elif __APPLE__
+    // macOS
+    char command[512];
+    snprintf(command, sizeof(command), "open \"%s\"", fs_get_write_path(""));
+    system(command);
+#endif
 }
 
 #ifdef DEVELOPMENT
@@ -29,7 +42,7 @@ void djui_panel_options_debug_create(struct DjuiBase* caller) {
         djui_checkbox_create(body, DLANG(MISC, DEBUG_ERRORS), &configDebugError, NULL);
 
 #ifndef HANDHELD
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
         djui_button_create(body, DLANG(OPTIONS, APPDATA), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_open_user_folder);
 #elif __linux__ || __APPLE__ || __MACH__
         djui_button_create(body, DLANG(OPTIONS, USER_FOLDER), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_open_user_folder);
@@ -61,7 +74,7 @@ void djui_panel_misc_create(struct DjuiBase* caller) {
 
 #ifndef DEVELOPMENT
 #ifndef HANDHELD
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(_WIN64)
         djui_button_create(body, DLANG(OPTIONS, APPDATA), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_open_user_folder);
 #elif __linux__ || __APPLE__ || __MACH__
         djui_button_create(body, DLANG(OPTIONS, USER_FOLDER), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_open_user_folder);

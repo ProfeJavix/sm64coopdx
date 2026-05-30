@@ -32,6 +32,7 @@ static u16 sCurrentMusic = MUSIC_NONE;
 static u16 sCurrentShellMusic = MUSIC_NONE;
 static u16 sCurrentCapMusic = MUSIC_NONE;
 static u8 sPlayingInfiniteStairs = FALSE;
+static u8 unused8032C6D8[16] = { 0 };
 static s16 sSoundMenuModeToSoundMode[] = { SOUND_MODE_STEREO, SOUND_MODE_MONO, SOUND_MODE_HEADSET };
 // Only the 20th array element is used.
 static u32 sMenuSoundsExtra[] = {
@@ -88,7 +89,7 @@ void reset_volume(void) {
  */
 void lower_background_noise(s32 a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     switch (a) {
         case 1:
             set_audio_muted(TRUE);
@@ -98,7 +99,7 @@ void lower_background_noise(s32 a) {
             break;
     }
     sVolumeLoweredState |= a;
-
+  
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -107,7 +108,7 @@ void lower_background_noise(s32 a) {
  */
 void raise_background_noise(s32 a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     switch (a) {
         case 1:
             set_audio_muted(FALSE);
@@ -117,7 +118,7 @@ void raise_background_noise(s32 a) {
             break;
     }
     sVolumeLoweredState &= ~a;
-
+  
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -126,12 +127,12 @@ void raise_background_noise(s32 a) {
  */
 void disable_background_sound(void) {
     MUTEX_LOCK(gAudioThread);
-
+  
     if (!sBackgroundMusicDisabled) {
         sBackgroundMusicDisabled = TRUE;
         sound_banks_disable(SEQ_PLAYER_SFX, SOUND_BANKS_BACKGROUND);
     }
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -140,12 +141,12 @@ void disable_background_sound(void) {
  */
 void enable_background_sound(void) {
     MUTEX_LOCK(gAudioThread);
-
+      
     if (sBackgroundMusicDisabled) {
         sBackgroundMusicDisabled = FALSE;
         sound_banks_enable(SEQ_PLAYER_SFX, SOUND_BANKS_BACKGROUND);
     }
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -156,11 +157,11 @@ void enable_background_sound(void) {
  */
 void set_sound_mode(u16 soundMode) {
     MUTEX_LOCK(gAudioThread);
-
+    
     if (soundMode < 3) {
         audio_set_sound_mode(sSoundMenuModeToSoundMode[soundMode]);
     }
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -191,7 +192,7 @@ void play_menu_sounds(s16 soundMenuFlags) {
     if (soundMenuFlags & 0x100) {
         play_menu_sounds_extra(20, NULL);
     }
-
+    
     if (soundMenuFlags & SOUND_MENU_FLAG_LETGOMARIOFACE) {
         queue_rumble_data(10, 60);
     }
@@ -262,12 +263,12 @@ void set_background_music(u16 a, u16 seqArgs, s16 fadeTimer) {
  */
 void fadeout_music(s16 fadeOutTime) {
     MUTEX_LOCK(gAudioThread);
-
+    
     set_audio_fadeout(fadeOutTime);
     sCurrentMusic = MUSIC_NONE;
     sCurrentShellMusic = MUSIC_NONE;
     sCurrentCapMusic = MUSIC_NONE;
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -276,12 +277,12 @@ void fadeout_music(s16 fadeOutTime) {
  */
 void fadeout_level_music(s16 fadeTimer) {
     MUTEX_LOCK(gAudioThread);
-
+    
     seq_player_fade_out(SEQ_PLAYER_LEVEL, fadeTimer);
     sCurrentMusic = MUSIC_NONE;
     sCurrentShellMusic = MUSIC_NONE;
     sCurrentCapMusic = MUSIC_NONE;
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -378,7 +379,7 @@ void thread4_sound(UNUSED void *arg) {
 #ifdef VERSION_SH
             spTask = func_sh_802f5a80(); // The function was probably just moved to a different file. Don't kill me.
 #else
-            spTask = create_next_audio_frame_task();
+            spTask = create_next_audio_frame_task(); 
 #endif
             if (spTask != NULL) {
                 dispatch_audio_sptask(spTask);

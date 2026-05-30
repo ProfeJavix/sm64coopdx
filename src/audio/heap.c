@@ -228,13 +228,6 @@ void discard_bank(s32 bankId) {
                 note->parentLayer->finished = TRUE;
             }
             note_disable(note);
-
-            // Reset sample state
-            note->sound = NULL;
-            note->samplePosInt = 0;
-            note->samplePosFrac = 0;
-            note->sampleDmaIndex = 0;
-
             audio_list_remove(&note->listItem);
             audio_list_push_back(&gNoteFreeLists.disabled, &note->listItem);
         }
@@ -258,7 +251,7 @@ void discard_sequence(s32 seqId) {
 void *soundAlloc(struct SoundAllocPool *pool, u32 size) {
 #if defined(VERSION_EU) || defined(VERSION_SH)
     u32 alignedSize = ALIGN16(size);
-
+    
     if (pool == NULL || pool->cur == NULL) {
         LOG_ERROR("Failed to allocate for sound pool! Pool is NULL!");
         return NULL;
@@ -319,7 +312,7 @@ void *sound_alloc_uninitialized(struct SoundAllocPool *pool, u32 size) {
 
 void sound_alloc_pool_init(struct SoundAllocPool *pool, void *memAddr, u32 size) {
     MUTEX_LOCK(gAudioThread);
-
+    
     pool->cur = pool->start = (u8 *) ALIGN16((uintptr_t) memAddr);
 #ifdef VERSION_SH
     pool->size = size - ((uintptr_t) memAddr & 0xf);
@@ -327,23 +320,23 @@ void sound_alloc_pool_init(struct SoundAllocPool *pool, void *memAddr, u32 size)
     pool->size = size;
 #endif
     pool->numAllocatedEntries = 0;
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
 void persistent_pool_clear(struct PersistentPool *persistent) {
     MUTEX_LOCK(gAudioThread);
-
+    
     persistent->pool.numAllocatedEntries = 0;
     persistent->pool.cur = persistent->pool.start;
     persistent->numEntries = 0;
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
 void temporary_pool_clear(struct TemporaryPool *temporary) {
     MUTEX_LOCK(gAudioThread);
-
+    
     temporary->pool.numAllocatedEntries = 0;
     temporary->pool.cur = temporary->pool.start;
     temporary->nextSide = 0;
@@ -355,7 +348,7 @@ void temporary_pool_clear(struct TemporaryPool *temporary) {
 #endif
     temporary->entries[0].id = -1; // should be at 1e not 1c
     temporary->entries[1].id = -1;
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -367,10 +360,10 @@ void unused_803160F8(struct SoundAllocPool *pool) {
 extern s32 D_SH_80315EE8;
 void sound_init_main_pools(s32 sizeForAudioInitPool) {
     MUTEX_LOCK(gAudioThread);
-
+    
     sound_alloc_pool_init(&gAudioInitPool, gAudioHeap, sizeForAudioInitPool);
     sound_alloc_pool_init(&gAudioSessionPool, gAudioHeap + sizeForAudioInitPool, gAudioHeapSize - sizeForAudioInitPool);
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
@@ -382,27 +375,27 @@ void sound_init_main_pools(s32 sizeForAudioInitPool) {
 
 void session_pools_init(struct PoolSplit *a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     gAudioSessionPool.cur = gAudioSessionPool.start;
     sound_alloc_pool_init(&gNotesAndBuffersPool, SOUND_ALLOC_FUNC(&gAudioSessionPool, a->wantSeq), a->wantSeq);
     sound_alloc_pool_init(&gSeqAndBankPool, SOUND_ALLOC_FUNC(&gAudioSessionPool, a->wantCustom), a->wantCustom);
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
 void seq_and_bank_pool_init(struct PoolSplit2 *a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     gSeqAndBankPool.cur = gSeqAndBankPool.start;
     sound_alloc_pool_init(&gPersistentCommonPool, SOUND_ALLOC_FUNC(&gSeqAndBankPool, a->wantPersistent), a->wantPersistent);
     sound_alloc_pool_init(&gTemporaryCommonPool, SOUND_ALLOC_FUNC(&gSeqAndBankPool, a->wantTemporary), a->wantTemporary);
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
 void persistent_pools_init(struct PoolSplit *a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     gPersistentCommonPool.cur = gPersistentCommonPool.start;
     sound_alloc_pool_init(&gSeqLoadedPool.persistent.pool, SOUND_ALLOC_FUNC(&gPersistentCommonPool, a->wantSeq), a->wantSeq);
     sound_alloc_pool_init(&gBankLoadedPool.persistent.pool, SOUND_ALLOC_FUNC(&gPersistentCommonPool, a->wantBank), a->wantBank);
@@ -410,13 +403,13 @@ void persistent_pools_init(struct PoolSplit *a) {
     persistent_pool_clear(&gSeqLoadedPool.persistent);
     persistent_pool_clear(&gBankLoadedPool.persistent);
     persistent_pool_clear(&gUnusedLoadedPool.persistent);
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 
 void temporary_pools_init(struct PoolSplit *a) {
     MUTEX_LOCK(gAudioThread);
-
+    
     gTemporaryCommonPool.cur = gTemporaryCommonPool.start;
     sound_alloc_pool_init(&gSeqLoadedPool.temporary.pool, SOUND_ALLOC_FUNC(&gTemporaryCommonPool, a->wantSeq), a->wantSeq);
     sound_alloc_pool_init(&gBankLoadedPool.temporary.pool, SOUND_ALLOC_FUNC(&gTemporaryCommonPool, a->wantBank), a->wantBank);
@@ -424,10 +417,15 @@ void temporary_pools_init(struct PoolSplit *a) {
     temporary_pool_clear(&gSeqLoadedPool.temporary);
     temporary_pool_clear(&gBankLoadedPool.temporary);
     temporary_pool_clear(&gUnusedLoadedPool.temporary);
-
+    
     MUTEX_UNLOCK(gAudioThread);
 }
 #undef SOUND_ALLOC_FUNC
+
+#if defined(VERSION_JP) || defined(VERSION_US)
+static void unused_803163D4(void) {
+}
+#endif
 
 #ifdef VERSION_SH
 void *alloc_bank_or_seq(s32 poolIdx, s32 size, s32 arg3, s32 id) {

@@ -16,7 +16,6 @@
 #include "pc/lua/utils/smlua_model_utils.h"
 #include "pc/lua/utils/smlua_misc_utils.h"
 #include "pc/lua/utils/smlua_camera_utils.h"
-#include "pc/lua/utils/smlua_gfx_utils.h"
 #include "pc/mods/mods.h"
 #include "pc/crash_handler.h"
 #include "pc/debuglog.h"
@@ -37,7 +36,6 @@
 #include "game/mario.h"
 #include "engine/math_util.h"
 #include "engine/lighting_engine.h"
-#include "audio/load.h"
 
 #ifdef DISCORD_SDK
 #include "pc/discord/discord.h"
@@ -618,7 +616,7 @@ void network_update(void) {
             bool inCredits = (np->currActNum == 99);
             if (gNetworkType == NT_SERVER && (npAny == NULL || inCredits)) {
                 // no NetworkPlayer in the level
-                network_send_sync_valid(np, np->currCourseNum, np->currActNum, np->currLevelNum, np->currAreaIndex, false);
+                network_send_sync_valid(np, np->currCourseNum, np->currActNum, np->currLevelNum, np->currAreaIndex);
                 return;
             }
 
@@ -713,7 +711,6 @@ void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnect
     gOverrideFar = 0;
     gOverrideFOV = 0;
     gRoomOverride = -1;
-    gOverrideBank = -1;
     gCurrActStarNum = 0;
     gCurrActNum = 0;
     gCurrCreditsEntry = NULL;
@@ -724,11 +721,9 @@ void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnect
     color_set(gSkyboxColor, 0xFF, 0xFF, 0xFF);
     color_set(gFogColor, 0xFF, 0xFF, 0xFF);
     gFogIntensity = 1.0f;
-    gFullbright = false;
-    clear_all_shader_flags();
     gOverrideBackground = -1;
     gOverrideEnvFx = ENVFX_MODE_NO_OVERRIDE;
-    gRomhackCameraSettings.switchable = FALSE;
+    gRomhackCameraSettings.centering = FALSE;
     gOverrideAllowToxicGasCamera = FALSE;
     gRomhackCameraSettings.dpad = FALSE;
     camera_reset_overrides();

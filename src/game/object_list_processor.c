@@ -25,7 +25,6 @@
 #include "engine/math_util.h"
 #include "pc/network/network.h"
 #include "pc/lua/smlua.h"
-#include "pc/djui/djui_hud_utils.h"
 
 /**
  * Flags controlling what debug info is displayed.
@@ -265,8 +264,6 @@ void bhv_mario_update(void) {
     if ((stateIndex == 0) || (!is_player_active(gMarioState))) {
         gMarioState->particleFlags = 0;
     }
-
-    gMarioState->visibleToObjects = true;
 
     smlua_call_event_hooks(HOOK_BEFORE_MARIO_UPDATE, gMarioState);
 
@@ -608,7 +605,6 @@ void clear_objects(void) {
 
     clear_dynamic_surfaces();
     geo_clear_interp_data();
-    djui_hud_clear_interp_data();
 }
 
 /**
@@ -656,7 +652,7 @@ void unload_deactivated_objects(void) {
 /**
  * Unused profiling function.
  */
-UNUSED static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
     u16 time;
     f64 cycles;
 

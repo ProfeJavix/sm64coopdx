@@ -36,27 +36,17 @@ enum LuaValueType {
     LVT_LUATABLE,
     LVT_POINTER,
     LVT_FUNCTION,
-    LVT_PROPERTY,
     LVT_MAX,
 };
 
 struct LuaObjectField {
     const char* key;
     enum LuaValueType valueType;
-    union {
-        struct {
-            size_t valueOffset;
-            bool immutable;
-            u16 lot;
-            u16 count;
-            u32 size;
-        };
-        const char* function;
-        struct {
-            const char* get;
-            const char* set;
-        };
-    };
+    size_t valueOffset;
+    bool immutable;
+    u16 lot;
+    u16 count;
+    u32 size;
 };
 
 struct LuaObjectTable {

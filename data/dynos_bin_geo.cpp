@@ -123,17 +123,15 @@ static s64 ParseGeoSymbolArg(GfxData* aGfxData, DataNode<GeoLayout>* aNode, u64&
     }
 
     // Display lists
-    {
-        auto _Node = aGfxData->mDisplayLists.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
+    for (auto& _Node : aGfxData->mDisplayLists) {
+        if (_Arg == _Node->mName) {
             return (s64) DynOS_Gfx_Parse(aGfxData, _Node);
         }
     }
 
     // Geo layouts
-    {
-        auto _Node = aGfxData->mGeoLayouts.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
+    for (auto& _Node : aGfxData->mGeoLayouts) {
+        if (_Arg == _Node->mName) {
             auto geoNode = DynOS_Geo_Parse(aGfxData, _Node, false);
             aGfxData->mChildGeoLayouts.Add(geoNode);
             return (s64) geoNode->mData;
@@ -443,7 +441,14 @@ static void ParseGeoSymbol(GfxData* aGfxData, DataNode<GeoLayout>* aNode, GeoLay
     if (_Symbol == "GEO_BACKGROUND") {
         // check if this is a custom background
         const String& backgroundName = aNode->mTokens[aTokenIndex];
-        auto node = aGfxData->mTextureLists.Find(backgroundName, aGfxData->mDataIdentifier);
+        DataNode<TexData*>* node = NULL;
+        for (auto& _Node : aGfxData->mTextureLists) {
+            if (backgroundName == _Node->mName) {
+                node = _Node;
+                break;
+            }
+        }
+
         if (node) {
             // custom background cmd
             node = DynOS_TexList_Parse(aGfxData, node);

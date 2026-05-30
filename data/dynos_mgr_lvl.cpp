@@ -129,9 +129,10 @@ Trajectory* DynOS_Lvl_GetTrajectory(const char* aName) {
     auto& _CustomLevelScripts = DynOS_Lvl_GetArray();
 
     for (auto& script : _CustomLevelScripts) {
-        auto trajectoryNode = script.second->mTrajectories.Find(aName);
-        if (trajectoryNode) {
-            return trajectoryNode->mData;
+        for (auto& trajectoryNode : script.second->mTrajectories) {
+            if (trajectoryNode->mName == aName) {
+                return trajectoryNode->mData;
+            }
         }
     }
     return NULL;

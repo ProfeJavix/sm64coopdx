@@ -22,7 +22,6 @@
 
 # Executables
 *.exe
-!updater/*/*.exe
 *.out
 *.app
 *.hex

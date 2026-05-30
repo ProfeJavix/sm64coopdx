@@ -241,9 +241,11 @@ void DynOS_Anim_Table_Load(BinFile *aFile, GfxData *aGfxData) {
     // Data
     String _AnimationName; _AnimationName.Read(aFile);
     if (_AnimationName != "NULL") {
-        auto _AnimData = aGfxData->mAnimations.Find(_AnimationName);
-        if (_AnimData) {
-            _AnimationPtr = (void *) _AnimData->mData;
+        for (auto &_AnimData : aGfxData->mAnimations) {
+            if (_AnimData->mName == _AnimationName) {
+                _AnimationPtr = (void *) _AnimData->mData;
+                break;
+            }
         }
         if (!_AnimationPtr) {
             sys_fatal("Animation not found: %s", _AnimationName.begin());

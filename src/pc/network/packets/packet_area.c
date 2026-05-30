@@ -121,7 +121,7 @@ void network_send_area(struct NetworkPlayer* toNp) {
         }
 
         // send sync valid
-        network_send_sync_valid(toNp, gCurrCourseNum, gCurrActStarNum, gCurrLevelNum, gCurrAreaIndex, false);
+        network_send_sync_valid(toNp, gCurrCourseNum, gCurrActStarNum, gCurrLevelNum, gCurrAreaIndex);
     }
     packet_ordered_end();
 

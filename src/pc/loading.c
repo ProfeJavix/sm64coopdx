@@ -1,5 +1,7 @@
 #include "loading.h"
 
+#ifdef LOADING_SCREEN_SUPPORTED
+
 #include <assert.h>
 
 #include "djui/djui.h"
@@ -27,7 +29,7 @@ static struct LoadingScreen* sLoading = NULL;
 struct ThreadHandle gLoadingThread = { 0 };
 
 void loading_screen_set_segment_text(const char* text) {
-    snprintf(gCurrLoadingSegment.str, 256, "%s", text);
+    snprintf(gCurrLoadingSegment.str, 256, text);
 }
 
 void loading_screen_reset_progress_bar(void) {
@@ -177,7 +179,7 @@ void render_loading_screen(void) {
 
     // loading screen loop
     while (!gGameInited) {
-        gWindowApi->main_loop(loading_screen_produce_one_frame);
+        WAPI.main_loop(loading_screen_produce_one_frame);
     }
 
     int err = join_thread(&gLoadingThread);
@@ -190,6 +192,8 @@ void render_rom_setup_screen(void) {
     loading_screen_set_segment_text("No rom detected, drag & drop Super Mario 64 (U) [!].z64 on to this screen");
 
     while (!gRomIsValid) {
-        gWindowApi->main_loop(loading_screen_produce_one_frame);
+        WAPI.main_loop(loading_screen_produce_one_frame);
     }
 }
+
+#endif

@@ -6,7 +6,6 @@ extern "C" {
 #include "include/textures.h"
 #include "src/pc/lua/smlua.h"
 #include "src/pc/lua/utils/smlua_gfx_utils.h"
-#include "src/pc/mods/mods_utils.h"
 #include "include/macros.h"
 }
 
@@ -402,7 +401,7 @@ s64 DynOS_Gfx_ParseGfxConstants(const String& _Arg, bool* found) {
     gfx_constant(EMBLEM);
     gfx_constant(METAL);
 
-    // Extended geometry modes
+    // Extended
     gfx_constant(G_LIGHT_MAP_EXT);
     gfx_constant(G_LIGHTING_ENGINE_EXT);
     gfx_constant(G_PACKED_NORMALS_EXT);
@@ -410,29 +409,11 @@ s64 DynOS_Gfx_ParseGfxConstants(const String& _Arg, bool* found) {
     gfx_constant(G_FRESNEL_COLOR_EXT);
     gfx_constant(G_FRESNEL_ALPHA_EXT);
 
-    // Player part to color
     gfx_constant(G_COL_PRIM);
     gfx_constant(G_COL_ENV);
+
     gfx_constant(G_CP_LIGHT);
     gfx_constant(G_CP_AMBIENT);
-
-    // Gfx state
-    gfx_constant(G_STATE_GEOMETRY_MODE);
-    gfx_constant(G_STATE_COMBINE_MODE);
-    gfx_constant(G_STATE_OTHER_MODE_L);
-    gfx_constant(G_STATE_OTHER_MODE_H);
-    gfx_constant(G_STATE_OTHER_MODE);
-    gfx_constant(G_STATE_ENV_COLOR);
-    gfx_constant(G_STATE_PRIM_COLOR);
-    gfx_constant(G_STATE_FOG_COLOR);
-    gfx_constant(G_STATE_FILL_COLOR);
-    gfx_constant(G_STATE_FRESNEL);
-    gfx_constant(G_STATE_TEXTURES);
-    gfx_constant(G_STATE_LIGHTS);
-    gfx_constant(G_STATE_VIEWPORT);
-    gfx_constant(G_STATE_SCISSOR);
-    gfx_constant(G_STATE_Z_BUFFER);
-    gfx_constant(G_STATE_COLOR_IMAGE);
 
     // Common values
     gfx_constant(CALC_DXT(4,G_IM_SIZ_4b_BYTES));
@@ -475,14 +456,6 @@ s64 DynOS_Gfx_ParseGfxConstants(const String& _Arg, bool* found) {
     return 0;
 }
 
-template <typename T>
-static DataNode<T> *FindLightNode(GfxData *aGfxData, DataNodes<T> &aDataNodes, String aName) {
-    char *_NameStart = aName.begin() + (aName[0] == '&' ? 1 : 0);
-    char *_NameEnd = strchr(_NameStart, '.');
-    if (_NameEnd) *_NameEnd = 0;
-    return aDataNodes.Find(_NameStart, aGfxData->mDataIdentifier);
-}
-
 static s64 ParseGfxSymbolArg(GfxData* aGfxData, DataNode<Gfx>* aNode, u64* pTokenIndex, const char *aPrefix, const GfxParamType aParamType) {
     assert(aPrefix != NULL);
     if (pTokenIndex != NULL) { CHECK_TOKEN_INDEX(*pTokenIndex, 0); }
@@ -513,9 +486,10 @@ static s64 ParseGfxSymbolArg(GfxData* aGfxData, DataNode<Gfx>* aNode, u64* pToke
         }
 
         // Raw pointers
-        auto _Node = aGfxData->mRawPointers.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
-            return (s64) _Node->mData;
+        for (auto& _Node : aGfxData->mRawPointers) {
+            if (_Arg == _Node->mName) {
+                return (s64) _Node->mData;
+            }
         }
     }
 
@@ -529,109 +503,108 @@ static s64 ParseGfxSymbolArg(GfxData* aGfxData, DataNode<Gfx>* aNode, u64* pToke
 
     // Lights
     if (aParamType == GFX_PARAM_TYPE_PTR) {
-
-        // Lights
-        {
-            auto _Node = FindLightNode(aGfxData, aGfxData->mLights, _Arg);
-            if (_Node) {
-
-                // Ambient pointer
-                if (str_ends_with(_Arg.begin(), ".a")) {
-                    return (s64) &(DynOS_Lights_Parse(aGfxData, _Node)->mData->a);
-                }
-
-                // Diffuse pointer
-                if (str_ends_with(_Arg.begin(), ".l")) {
-                    return (s64) &(DynOS_Lights_Parse(aGfxData, _Node)->mData->l[0]);
-                }
-
-                // Light pointer
+        for (auto& _Node : aGfxData->mLights) {
+            // Light pointer
+            if (_Arg == _Node->mName) {
                 return (s64) DynOS_Lights_Parse(aGfxData, _Node)->mData;
             }
-        }
 
-        // Light0s
-        {
-            auto _Node = FindLightNode(aGfxData, aGfxData->mLight0s, _Arg);
-            if (_Node) {
-
-                // Light pointer
-                return (s64) DynOS_Light0_Parse(aGfxData, _Node)->mData;
+            // Ambient pointer
+            String _Ambient("&%s.a", _Node->mName.begin());
+            if (_Arg == _Ambient) {
+                return (s64) &(DynOS_Lights_Parse(aGfxData, _Node)->mData->a);
             }
-        }
 
-        // LightTs
-        {
-            auto _Node = FindLightNode(aGfxData, aGfxData->mLightTs, _Arg);
-            if (_Node) {
-
-                // Diffuse pointer
-                if (str_ends_with(_Arg.begin(), ".col")) {
-                    return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->col[0]);
-                }
-
-                // Diffuse copy pointer
-                if (str_ends_with(_Arg.begin(), ".colc")) {
-                    return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->colc[0]);
-                }
-
-                // Dir pointer
-                if (str_ends_with(_Arg.begin(), ".dir")) {
-                    return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->dir[0]);
-                }
-
-                // Light pointer
-                return (s64) DynOS_LightT_Parse(aGfxData, _Node)->mData;
-            }
-        }
-
-        // AmbientTs
-        {
-            auto _Node = FindLightNode(aGfxData, aGfxData->mAmbientTs, _Arg);
-            if (_Node) {
-
-                // Diffuse pointer
-                if (str_ends_with(_Arg.begin(), ".col")) {
-                    return (s64) &(DynOS_AmbientT_Parse(aGfxData, _Node)->mData->col[0]);
-                }
-
-                // Diffuse copy pointer
-                if (str_ends_with(_Arg.begin(), ".colc")) {
-                    return (s64) &(DynOS_AmbientT_Parse(aGfxData, _Node)->mData->colc[0]);
-                }
-
-                // Light pointer
-                return (s64) DynOS_AmbientT_Parse(aGfxData, _Node)->mData;
+            // Diffuse pointer
+            String _Diffuse("&%s.l", _Node->mName.begin());
+            if (_Arg == _Diffuse) {
+                return (s64) &(DynOS_Lights_Parse(aGfxData, _Node)->mData->l[0]);
             }
         }
     }
 
     // Textures
     if (aParamType == GFX_PARAM_TYPE_TEX) {
-        auto _Node = aGfxData->mTextures.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
-            return (s64) DynOS_Tex_Parse(aGfxData, _Node);
+        for (auto& _Node : aGfxData->mTextures) {
+            if (_Arg == _Node->mName) {
+                return (s64) DynOS_Tex_Parse(aGfxData, _Node);
+            }
         }
     }
 
     // Vertex arrays
     if (aParamType == GFX_PARAM_TYPE_VTX) {
-        auto _Node = aGfxData->mVertices.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
-            auto base = DynOS_Vtx_Parse(aGfxData, _Node)->mData;
-            auto data = (u8*)base + _Offset;
-            if (_Offset != 0) {
-                aGfxData->mPointerOffsetList.Add({ (const void*)data, (const void*)base });
+        for (auto& _Node : aGfxData->mVertices) {
+            if (_Arg == _Node->mName) {
+                auto base = DynOS_Vtx_Parse(aGfxData, _Node)->mData;
+                auto data = (u8*)base + _Offset;
+                if (_Offset != 0) {
+                    aGfxData->mPointerOffsetList.Add({ (const void*)data, (const void*)base });
+                }
+                return (s64) data;
             }
-            return (s64) data;
         }
     }
 
     // Display lists
     if (aParamType == GFX_PARAM_TYPE_GFX) {
-        auto _Node = aGfxData->mDisplayLists.Find(_Arg, aGfxData->mDataIdentifier);
-        if (_Node) {
-            return (s64) DynOS_Gfx_Parse(aGfxData, _Node);
+        for (auto& _Node : aGfxData->mDisplayLists) {
+            if (_Arg == _Node->mName) {
+                return (s64) DynOS_Gfx_Parse(aGfxData, _Node);
+            }
+        }
+    }
+
+    if (aParamType == GFX_PARAM_TYPE_PTR) {
+        for (auto& _Node : aGfxData->mLight0s) {
+            // Light pointer
+            if (_Arg == _Node->mName) {
+                return (s64) DynOS_Light0_Parse(aGfxData, _Node)->mData;
+            }
+        }
+
+        for (auto& _Node : aGfxData->mLightTs) {
+            // Light pointer
+            if (_Arg == _Node->mName) {
+                return (s64) DynOS_LightT_Parse(aGfxData, _Node)->mData;
+            }
+
+            // Diffuse pointer
+            String _Diffuse("&%s.col", _Node->mName.begin());
+            if (_Arg == _Diffuse) {
+                return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->col[0]);
+            }
+
+            // Diffuse copy pointer
+            String _DiffuseC("&%s.colc", _Node->mName.begin());
+            if (_Arg == _DiffuseC) {
+                return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->colc[0]);
+            }
+
+            // Dir pointer
+            String _Dir("&%s.dir", _Node->mName.begin());
+            if (_Arg == _Dir) {
+                return (s64) &(DynOS_LightT_Parse(aGfxData, _Node)->mData->dir[0]);
+            }
+        }
+
+        for (auto& _Node : aGfxData->mAmbientTs) {
+            // Light pointer
+            if (_Arg == _Node->mName) {
+                return (s64) DynOS_AmbientT_Parse(aGfxData, _Node)->mData;
+            }
+
+            // Diffuse pointer
+            String _Diffuse("&%s.col", _Node->mName.begin());
+            if (_Arg == _Diffuse) {
+                return (s64) &(DynOS_AmbientT_Parse(aGfxData, _Node)->mData->col[0]);
+            }
+
+            // Diffuse copy pointer
+            String _DiffuseC("&%s.colc", _Node->mName.begin());
+            if (_Arg == _DiffuseC) {
+                return (s64) &(DynOS_AmbientT_Parse(aGfxData, _Node)->mData->colc[0]);
+            }
         }
     }
 
@@ -805,7 +778,7 @@ static void ParseGfxSymbol(GfxData* aGfxData, DataNode<Gfx>* aNode, Gfx*& aHead,
 #define CALL_SYMB(symb, ...) symb(__VA_ARGS__)
 #define define_gfx_symbol(symb, params, addPtr, ...)                \
 if (_Symbol == #symb) {                                             \
-    UNUSED static const GfxParamType paramTypes[] = { __VA_ARGS__ };\
+    static const GfxParamType paramTypes[] = { __VA_ARGS__ };       \
     REPEAT(HANDLE_PARAM, params);                                   \
     if (addPtr) { aGfxData->mPointerList.Add(aHead); }              \
     Gfx _Gfx[] = { CALL_SYMB(symb, LIST_ARGS(GET_ARG, params)) };   \

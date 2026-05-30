@@ -80,7 +80,6 @@ in_files = [
     "src/audio/seqplayer.h",
     "src/engine/lighting_engine.h",
     "src/pc/network/sync_object.h",
-    "src/audio/load.h",
 ]
 
 override_allowed_functions = {
@@ -100,12 +99,11 @@ override_allowed_functions = {
     "src/game/ingame_menu.h":               [ "set_min_dialog_width", "set_dialog_override_pos", "reset_dialog_override_pos", "set_dialog_override_color", "reset_dialog_override_color", "set_menu_mode", "create_dialog_box", "create_dialog_box_with_var", "create_dialog_inverted_box", "create_dialog_box_with_response", "reset_dialog_render_state", "set_dialog_box_state", "handle_special_dialog_text" ],
     "src/audio/seqplayer.h":                [ "sequence_player_set_tempo", "sequence_player_set_tempo_acc", "sequence_player_set_transposition", "sequence_player_get_tempo", "sequence_player_get_tempo_acc", "sequence_player_get_transposition", "sequence_player_get_volume", "sequence_player_get_fade_volume", "sequence_player_get_mute_volume_scale" ],
     "src/pc/network/sync_object.h":         [ "sync_object_is_initialized", "sync_object_is_owned_locally", "sync_object_get_object" ],
-    "src/audio/load.h":                     [ "set_sound_bank_override" ],
 }
 
 override_disallowed_functions = {
     "src/audio/external.h":                     [ " func_" ],
-    "src/engine/surface_load.h":                [ "load_area_terrain", "alloc_surface_pools", "clear_dynamic_surfaces", "get_area_terrain_size", "alloc_surface", "add_surface", "remove_surface_from_partition", "delete_surface", "swap_and_pop_surface_pool", "add_surface_without_hook" ],
+    "src/engine/surface_load.h":                [ "load_area_terrain", "alloc_surface_pools", "clear_dynamic_surfaces", "get_area_terrain_size" ],
     "src/engine/surface_collision.h":           [ " debug_", "f32_find_wall_collision" ],
     "src/game/mario_actions_airborne.c":        [ "^[us]32 act_.*" ],
     "src/game/mario_actions_automatic.c":       [ "^[us]32 act_.*" ],
@@ -118,19 +116,18 @@ override_disallowed_functions = {
     "src/game/mario.h":                         [ " init_mario" ],
     "src/pc/djui/djui_console.h":               [ " djui_console_create", "djui_console_message_create", "djui_console_message_dequeue" ],
     "src/pc/djui/djui_chat_message.h":          [ "create_from" ],
-    "src/pc/djui/djui_hud_utils.h":             [ "djui_hud_clear_interp_data", "djui_hud_print_text", "djui_hud_print_text_interpolated" ],
     "src/game/interaction.h":                   [ "process_interaction", "_handle_" ],
     "src/game/sound_init.h":                    [ "_loop_", "thread4_", "set_sound_mode" ],
     "src/pc/network/network_utils.h":           [ "network_get_player_text_color[^_]" ],
     "src/pc/network/network_player.h":          [ "_init", "_connected[^_]", "_shutdown", "_disconnected", "_update", "construct_player_popup", "network_player_name_valid" ],
-    "src/game/object_helpers.c":                [ "spawn_obj", "^bhv_", "geo_", "abs[fi]", "^bit_shift", "_debug$", "^stub_", "_set_model", "cur_obj_set_direction_table", "cur_obj_progress_direction_table" ],
-    "src/game/obj_behaviors.c":                 [ "debug_", "geo_", "turn_obj_away_from_surface"],
+    "src/game/object_helpers.c":                [ "spawn_obj", "^bhv_", "abs[fi]", "^bit_shift", "_debug$", "^stub_", "_set_model", "cur_obj_set_direction_table", "cur_obj_progress_direction_table" ],
+    "src/game/obj_behaviors.c":                 [ "debug_", "turn_obj_away_from_surface" ],
     "src/game/obj_behaviors_2.c":               [ "wiggler_jumped_on_attack_handler", "huge_goomba_weakly_attacked" ],
     "src/game/spawn_sound.h":                   [ "exec_anim_sound_state" ],
     "src/game/level_info.h":                    [ "_name_table", "convert_string_" ],
     "src/pc/lua/utils/smlua_obj_utils.h":       [ "spawn_object_remember_field" ],
-    "src/game/camera.h":                        [ "geo_", "update_camera", "init_camera", "stub_camera", "^reset_camera", "move_point_along_spline", "romhack_camera_init_settings", "romhack_camera_reset_settings" ],
-    "src/game/behavior_actions.h":              [ "bhv_dust_smoke_loop", "bhv_init_room", "geo_" ],
+    "src/game/camera.h":                        [ "update_camera", "init_camera", "stub_camera", "^reset_camera", "move_point_along_spline", "romhack_camera_init_settings", "romhack_camera_reset_settings" ],
+    "src/game/behavior_actions.h":              [ "bhv_dust_smoke_loop", "bhv_init_room" ],
     "src/pc/lua/utils/smlua_audio_utils.h":     [ "smlua_audio_utils_override", "audio_custom_shutdown", "smlua_audio_custom_deinit", "audio_sample_destroy_pending_copies", "audio_custom_update_volume" ],
     "src/pc/lua/utils/smlua_level_utils.h":     [ "smlua_level_util_reset" ],
     "src/pc/lua/utils/smlua_text_utils.h":      [ "smlua_text_utils_init", "smlua_text_utils_shutdown", "smlua_text_utils_dialog_get_unmodified"],
@@ -142,7 +139,7 @@ override_disallowed_functions = {
     "src/engine/behavior_script.h":             [ "stub_behavior_script_2", "cur_obj_update" ],
     "src/pc/mods/mod_storage.h":                [ "mod_storage_shutdown" ],
     "src/pc/mods/mod_fs.h":                     [ "mod_fs_read_file_from_uri", "mod_fs_shutdown" ],
-    "src/pc/utils/misc.h":                      [ "str_.*", "file_get_line", "delta_interpolate_(normal|rgba|mtx)", "detect_and_skip_mtx_interpolation", "precise_delay_f64", "can_update_game", "update_game", "open_url", "open_folder" ],
+    "src/pc/utils/misc.h":                      [ "str_.*", "file_get_line", "delta_interpolate_(normal|rgba|mtx)", "detect_and_skip_mtx_interpolation", "precise_delay_f64" ],
     "src/engine/lighting_engine.h":             [ "le_calculate_vertex_lighting", "le_clear", "le_shutdown" ],
 }
 
@@ -234,8 +231,6 @@ manual_index_documentation = """
    - [cast_graph_node](#cast_graph_node)
    - [get_uncolored_string](#get_uncolored_string)
    - [gfx_set_command](#gfx_set_command)
-   - [djui_hud_print_text](#djui_hud_print_text)
-   - [djui_hud_print_text_interpolated](#djui_hud_print_text_interpolated)
 
 <br />
 
@@ -729,64 +724,6 @@ N/A
 
 <br />
 
-## [djui_hud_print_text](#djui_hud_print_text)
-
-### Description
-Prints DJUI HUD text onto the screen
-
-### Lua Example
-`djui_hud_print_text(message, x, y, scaleX, scaleY)`
-
-### Parameters
-| Field | Type |
-| ----- | ---- |
-| message | `string` |
-| x | `number` |
-| y | `number` |
-| scaleX | `number` |
-| scaleY | `number` |
-
-### Returns
-- None
-
-### C Prototype
-`void djui_hud_print_text(const char* message, f32 x, f32 y, f32 scaleX, f32 scaleY);`
-
-[:arrow_up_small:](#)
-
-<br />
-
-## [djui_hud_print_text_interpolated](#djui_hud_print_text_interpolated)
-
-### Description
-Prints interpolated DJUI HUD text onto the screen
-
-### Lua Example
-`djui_hud_print_text_interpolated(message, prevX, prevY, prevScaleX, prevScaleY, x, y, scaleX, scaleY)`
-
-### Parameters
-| Field | Type |
-| ----- | ---- |
-| message | `string` |
-| prevX | `number` |
-| prevY | `number` |
-| prevScaleX | `number` |
-| prevScaleY | `number` |
-| x | `number` |
-| y | `number` |
-| scaleX | `number` |
-| scaleY | `number` |
-
-### Returns
-- None
-
-### C Prototype
-`void djui_hud_print_text_interpolated(const char* message, f32 prevX, f32 prevY, f32 prevScaleX, f32 prevScaleY, f32 x, f32 y, f32 scaleX, f32 scaleY);`
-
-[:arrow_up_small:](#)
-
-<br />
-
 """
 
 ############################################################################
@@ -888,7 +825,7 @@ def build_param(fid, param, i):
         lot = translate_type_to_lot(ptype)
         s = '  %s %s = (%s)smlua_to_cobject(L, %d, %s);' % (ptype, pid, ptype, i, lot)
 
-        if '???' in lot:
+        if '???' in lot or "GRAPHNODE" in lot:
             s = '//' + s + ' <--- UNIMPLEMENTED'
         else:
             s = '  ' + s
@@ -973,7 +910,10 @@ def build_function(function, do_extern):
 
     fparams, freturns = split_function_parameters_and_returns(function)
 
-    s += 'int smlua_func_%s(lua_State* L) {\n' % function['identifier']
+    if len(function['params']) <= 0:
+        s += 'int smlua_func_%s(UNUSED lua_State* L) {\n' % function['identifier']
+    else:
+        s += 'int smlua_func_%s(lua_State* L) {\n' % function['identifier']
 
     # make sure the bhv functions have a current object
     fname = function['filename']
@@ -1009,7 +949,7 @@ def build_function(function, do_extern):
             sparam = build_param(fid, param, i)
             param_var, param_value = sparam.split('=')
             param_type = param_var.replace(pid, '').strip()
-            s += '    %s = (%s) %s;\n' % (param_var.strip(), param_type, "NULL" if '*' in param_type else "0")
+            s += '    %s = (%s) NULL;\n' % (param_var.strip(), param_type)
             s += '    if (top >= %d) {\n' % (i)
             s += '        %s = %s\n' % (pid, param_value.strip())
             s += '        if (!gSmLuaConvertSuccess) { LOG_LUA("Failed to convert parameter %%u for function \'%%s\'", %d, "%s"); return 0; }\n' % (i, fid)
@@ -1073,7 +1013,7 @@ def build_function(function, do_extern):
     else:
         global total_functions
         total_functions += 1
-        if function['description'][0] != "":
+        if function['description'] != "":
             global total_doc_functions
             total_doc_functions += 1
         elif verbose:
@@ -1209,7 +1149,7 @@ def process_functions(fname, file_str, extracted_descriptions):
             rejects += line + '\n'
             continue
         line = line.strip()
-        description = extracted_descriptions.get(line, [""])
+        description = extracted_descriptions.get(line, "")
         fn = process_function(fname, line, description)
         if fn == None:
             continue
@@ -1351,15 +1291,14 @@ def doc_function(fname, function):
     fid = function['identifier']
     s = '\n## [%s](#%s)\n' % (fid, fid)
 
-    description = function.get('description', [""])
+    description = function.get('description', "")
 
     rtype, rlink = translate_type_to_lua(function['type'])
     param_str = ', '.join([x['identifier'] for x in function['params'] if 'RET' not in x])
 
-    if description[0] != "":
+    if description != "":
         s += '\n### Description\n'
-        for line in description:
-            s +=  f'{line}\n'
+        s +=  f'{description}\n'
 
     s += "\n### Lua Example\n"
     rvalues = []
@@ -1401,7 +1340,7 @@ def doc_function(fname, function):
         s += '- None\n'
 
     s += '\n### Returns\n'
-    if len(rvalues) > 0:
+    if rtype != None:
         for _, ptype, plink in rvalues:
             if plink:
                 s += '- [%s](%s)\n' % (ptype, plink)
@@ -1508,7 +1447,7 @@ def def_function(fname, function):
         rid = param['identifier']
         rtypes.append((rtype, rid))
 
-    if function['description'][0].startswith("[DEPRECATED"):
+    if function['description'].startswith("[DEPRECATED"):
         s += "--- @deprecated\n"
 
     for param in fparams:
@@ -1530,9 +1469,8 @@ def def_function(fname, function):
         if rtype != "nil":
             s += ('--- @return %s' % rtype) + (' %s' % rid if rid else '') + '\n'
 
-    if function['description'][0] != "":
-        for n, line in enumerate(function['description']):
-            s += "--- %s%s\n" % (line, "<br>" if n != len(function['description']) - 1 else "")
+    if function['description'] != "":
+        s += "--- %s\n" % (function['description'])
     s += "function %s(%s)\n    -- ...\nend\n\n" % (fid, param_str)
 
     return s

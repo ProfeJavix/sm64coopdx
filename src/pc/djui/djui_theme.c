@@ -7,9 +7,6 @@ static struct DjuiTheme sDjuiThemeLight = {
         .textColor = {
             11, 11, 11, 255
         },
-        .disabledTextColor = {
-            60, 60, 60, 255
-        },
 
         .defaultRectColor = {
             222, 222, 222, 255
@@ -50,9 +47,6 @@ static struct DjuiTheme sDjuiThemeDark = {
     .interactables = {
         .textColor = {
             220, 220, 220, 255
-        },
-        .disabledTextColor = {
-            140, 140, 140, 255
         },
 
         .defaultRectColor = {
@@ -95,9 +89,6 @@ static struct DjuiTheme sDjuiThemeFileSelect = {
         .textColor = {
             11, 11, 11, 255
         },
-        .disabledTextColor = {
-            60, 60, 60, 255
-        },
 
         .defaultRectColor = {
             200, 215, 197, 255
@@ -139,9 +130,6 @@ static struct DjuiTheme sDjuiThemeMario = {
         .textColor = {
             11, 11, 11, 255
         },
-        .disabledTextColor = {
-            60, 60, 60, 255
-        },
 
         .defaultRectColor = {
             255, 227, 0, 255
@@ -182,9 +170,6 @@ static struct DjuiTheme sDjuiThemeOdyssey = {
     .interactables = {
         .textColor = {
             11, 11, 11, 255
-        },
-        .disabledTextColor = {
-            60, 60, 60, 255
         },
 
         .defaultRectColor = {

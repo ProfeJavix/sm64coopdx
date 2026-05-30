@@ -74,24 +74,24 @@ enum PvpType {
     PLAYER_PVP_REVAMPED
 };
 
-enum StarExitType {
-    STAR_LEAVE_LEVEL,
-    STAR_STAY_IN_LEVEL,
-    STAR_NON_STOP,
+enum NametagsType {
+    NAMETAGS_DISABLED,
+    NAMETAGS_DEFAULT,
+    NAMETAGS_COLORED
 };
 
 struct ServerSettings {
     enum PlayerInteractions playerInteractions;
     enum BouncyLevelBounds bouncyLevelBounds;
     enum PvpType pvpType;
-    enum StarExitType stayInLevelAfterStar;
     u8 playerKnockbackStrength;
+    u8 stayInLevelAfterStar;
     u8 skipIntro;
     u8 bubbleDeath;
     u8 enablePlayersInLevelDisplay;
     u8 enablePlayerList;
     u8 headlessServer;
-    u8 nametags;
+    enum NametagsType nametags;
     u8 maxPlayers;
     u8 pauseAnywhere;
 };
